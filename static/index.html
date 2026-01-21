@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>LLM10 – Unbounded Consumption Lab</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #0b1220;
+      color: #e5e7eb;
+    }
+    #app {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #020617;
+      border-radius: 12px;
+      height: 85vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #1e293b;
+      font-weight: 600;
+    }
+    #messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .message { margin-bottom: 16px; }
+    .user { color: #f8fafc; font-weight: 600; }
+    .assistant { color: #38bdf8; }
+    .meta { font-size: 12px; color: #94a3b8; }
+    #input {
+      display: flex;
+      gap: 10px;
+      padding: 12px;
+      border-top: 1px solid #1e293b;
+    }
+    textarea {
+      flex: 1;
+      resize: none;
+      padding: 12px;
+      background: #020617;
+      color: #e5e7eb;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+    }
+    button {
+      padding: 0 22px;
+      border: none;
+      border-radius: 8px;
+      background: #38bdf8;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <header>🔥 LLM10 — Unbounded Consumption Lab</header>
+  <div id="messages"></div>
+  <div id="input">
+    <textarea id="prompt" rows="2"
+      placeholder="Enter = send • Shift+Enter = newline"></textarea>
+    <button onclick="send()">Send</button>
+  </div>
+</div>
+
+<script>
+const messages = document.getElementById("messages");
+const promptBox = document.getElementById("prompt");
+
+function add(role, text, ms=null) {
+  const d = document.createElement("div");
+  d.className = "message";
+  d.innerHTML = `<span class="${role}">${role}:</span> ${text}` +
+    (ms !== null ? `<div class="meta">⏱ ${ms} ms</div>` : "");
+  messages.appendChild(d);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+add("assistant", "Hi! Ask me anything.");
+
+async function send() {
+  const text = promptBox.value.trim();
+  if (!text) return;
+  promptBox.value = "";
+  add("user", text);
+
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({prompt: text})
+    });
+    const data = await res.json();
+    add("assistant", data.response, data.elapsed_ms);
+  } catch {
+    add("assistant", "Server error.");
+  }
+}
+
+promptBox.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    send();
+  }
+});
+</script>
+
+</body>
+</html>
